@@ -68,7 +68,7 @@ static void usage(void);
 static sig_atomic_t siginfo_recvd;
 static char decimal_point;
 static struct timeval before_tv;
-static int hflag, pflag;
+static int hflag, pflag, cflag;
 
 int
 main(int argc, char **argv)
@@ -86,7 +86,7 @@ main(int argc, char **argv)
 	decimal_point = localeconv()->decimal_point[0];
 
 	aflag = hflag = lflag = pflag = 0;
-	while ((ch = getopt(argc, argv, "ahlo:p")) != -1)
+	while ((ch = getopt(argc, argv, "ahlo:pc")) != -1)
 		switch((char)ch) {
 		case 'a':
 			aflag = 1;
@@ -102,6 +102,9 @@ main(int argc, char **argv)
 			break;
 		case 'p':
 			pflag = 1;
+			break;
+		case 'c':
+			cflag = 1;
 			break;
 		case '?':
 		default:
@@ -146,6 +149,17 @@ main(int argc, char **argv)
 	if ( ! WIFEXITED(status))
 		warnx("command terminated abnormally");
 	exitonsig = WIFSIGNALED(status) ? WTERMSIG(status) : 0;
+
+	if (cflag) {
+		/*
+		 * Print the command line that we've executed.
+		 */
+		int i = 0;
+		for (i = 0; i < argc; i++)
+			fprintf (out, "%s", argv[i]);
+		fprintf (out, "%s", (lflag || pflag) ? "\n" : ": ");
+	}
+	
 	showtime(out, &before_tv, &after, &ru);
 	if (lflag) {
 		int hz = getstathz();
@@ -258,7 +272,7 @@ humantime(FILE *out, long sec, long usec)
 
 static void
 showtime(FILE *out, struct timeval *before, struct timeval *after,
-    struct rusage *ru)
+	 struct rusage *ru)
 {
 
 	after->tv_sec -= before->tv_sec;
